@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "obsidian-tasks": {
+      "command": "obsidian-tasks-mcp",
+      "args": [
+        "-root",
+        "/path/to/your/obsidian/vault"
+      ]
+    }
+  }
+}
