@@ -2,6 +2,9 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseTask(t *testing.T) {
@@ -23,7 +26,7 @@ func TestParseTask(t *testing.T) {
 				Status:      "incomplete",
 				FilePath:    "todo.md",
 				LineNumber:  1,
-				Tags:        []string{},
+				Tags:        nil,
 				DueDate:     "",
 			},
 		},
@@ -38,7 +41,7 @@ func TestParseTask(t *testing.T) {
 				Status:      "complete",
 				FilePath:    "todo.md",
 				LineNumber:  2,
-				Tags:        []string{},
+				Tags:        nil,
 				DueDate:     "",
 			},
 		},
@@ -68,7 +71,7 @@ func TestParseTask(t *testing.T) {
 				Status:      "incomplete",
 				FilePath:    "todo.md",
 				LineNumber:  4,
-				Tags:        []string{},
+				Tags:        nil,
 				DueDate:     "2024-01-15",
 			},
 		},
@@ -83,7 +86,7 @@ func TestParseTask(t *testing.T) {
 				Status:      "incomplete",
 				FilePath:    "todo.md",
 				LineNumber:  5,
-				Tags:        []string{},
+				Tags:        nil,
 				DueDate:     "2024-01-15",
 			},
 		},
@@ -120,7 +123,7 @@ func TestParseTask(t *testing.T) {
 				Status:      "incomplete",
 				FilePath:    "todo.md",
 				LineNumber:  8,
-				Tags:        []string{},
+				Tags:        nil,
 				DueDate:     "",
 			},
 		},
@@ -159,42 +162,21 @@ func TestParseTask(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ParseTask(tt.line, tt.filePath, tt.lineNumber)
+
 			if tt.want == nil {
-				if got != nil {
-					t.Errorf("ParseTask() = %v, want nil", got)
-				}
+				assert.Nil(t, got)
+
 				return
 			}
-			if got == nil {
-				t.Fatalf("ParseTask() = nil, want %+v", tt.want)
-			}
-			if got.ID != tt.want.ID {
-				t.Errorf("ParseTask() ID = %v, want %v", got.ID, tt.want.ID)
-			}
-			if got.Description != tt.want.Description {
-				t.Errorf("ParseTask() Description = %v, want %v", got.Description, tt.want.Description)
-			}
-			if got.Status != tt.want.Status {
-				t.Errorf("ParseTask() Status = %v, want %v", got.Status, tt.want.Status)
-			}
-			if got.FilePath != tt.want.FilePath {
-				t.Errorf("ParseTask() FilePath = %v, want %v", got.FilePath, tt.want.FilePath)
-			}
-			if got.LineNumber != tt.want.LineNumber {
-				t.Errorf("ParseTask() LineNumber = %v, want %v", got.LineNumber, tt.want.LineNumber)
-			}
-			if len(got.Tags) != len(tt.want.Tags) {
-				t.Errorf("ParseTask() Tags length = %v, want %v", len(got.Tags), len(tt.want.Tags))
-			} else {
-				for i, tag := range got.Tags {
-					if tag != tt.want.Tags[i] {
-						t.Errorf("ParseTask() Tags[%d] = %v, want %v", i, tag, tt.want.Tags[i])
-					}
-				}
-			}
-			if got.DueDate != tt.want.DueDate {
-				t.Errorf("ParseTask() DueDate = %v, want %v", got.DueDate, tt.want.DueDate)
-			}
+
+			require.NotNil(t, got)
+			assert.Equal(t, tt.want.ID, got.ID)
+			assert.Equal(t, tt.want.Description, got.Description)
+			assert.Equal(t, tt.want.Status, got.Status)
+			assert.Equal(t, tt.want.FilePath, got.FilePath)
+			assert.Equal(t, tt.want.LineNumber, got.LineNumber)
+			assert.Equal(t, tt.want.Tags, got.Tags)
+			assert.Equal(t, tt.want.DueDate, got.DueDate)
 		})
 	}
 }

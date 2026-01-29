@@ -18,9 +18,9 @@ type Task struct {
 }
 
 var (
-	taskRegex     = regexp.MustCompile(`^(\s*)- \[([ x])\](.*)$`)
-	tagRegex      = regexp.MustCompile(`#[\w-]+`)
-	dueDateRegex  = regexp.MustCompile(`(?:📅|🗓️)\s*(\d{4}-\d{2}-\d{2})`)
+	taskRegex    = regexp.MustCompile(`^(\s*)- \[([ x])\](.*)$`)
+	tagRegex     = regexp.MustCompile(`#[\w-]+`)
+	dueDateRegex = regexp.MustCompile(`(?:📅|🗓️)\s*(\d{4}-\d{2}-\d{2})`)
 )
 
 // ParseTask parses a markdown task line into a Task struct
@@ -36,7 +36,7 @@ func ParseTask(line string, filePath string, lineNumber int) *Task {
 	}
 
 	content := matches[3]
-	
+
 	// Extract tags
 	tags := tagRegex.FindAllString(content, -1)
 	// Remove # prefix from tags

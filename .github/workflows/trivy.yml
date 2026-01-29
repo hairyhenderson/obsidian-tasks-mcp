@@ -1,0 +1,60 @@
+name: Trivy Scan
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  trivy:
+    permissions:
+      security-events: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      with:
+        persist-credentials: false
+    - name: Install Trivy
+      uses: aquasecurity/setup-trivy@3fb12ec12f41e471780db15c232d5dd185dcb514 # v0.2.5
+      with:
+        version: v0.56.2
+        cache: true
+    - name: Download Trivy DB
+      run: |
+        trivy fs --no-progress --download-db-only --db-repository public.ecr.aws/aquasecurity/trivy-db
+    - name: Run Trivy vulnerability scanner (table output)
+      run: |
+        trivy fs \
+          --scanners vuln \
+          --format table \
+          --exit-code 1 \
+          --ignore-unfixed \
+          --pkg-types os,library \
+          --severity CRITICAL,HIGH \
+          --skip-db-update \
+          .
+    - name: Run Trivy vulnerability scanner
+      run: |
+        trivy fs \
+          --scanners vuln \
+          --format sarif \
+          --output trivy-results.sarif \
+          --ignore-unfixed \
+          --pkg-types os,library \
+          --ignorefile .trivyignore \
+          --skip-db-update \
+          .
+      if: always() && github.repository == 'hairyhenderson/obsidian-tasks-mcp'
+    - name: Upload Trivy scan results to GitHub Security tab
+      if: always() && github.repository == 'hairyhenderson/obsidian-tasks-mcp'
+      uses: github/codeql-action/upload-sarif@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v4.31.10
+      with:
+        sarif_file: 'trivy-results.sarif'

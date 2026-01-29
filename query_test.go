@@ -2,6 +2,9 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseQuery(t *testing.T) {
@@ -16,9 +19,7 @@ func TestParseQuery(t *testing.T) {
 			query:   "",
 			wantErr: false,
 			check: func(t *testing.T, q *Query) {
-				if len(q.Filters) != 0 {
-					t.Errorf("expected 0 filters, got %d", len(q.Filters))
-				}
+				assert.Empty(t, q.Filters)
 			},
 		},
 		{
@@ -26,12 +27,8 @@ func TestParseQuery(t *testing.T) {
 			query:   "done",
 			wantErr: false,
 			check: func(t *testing.T, q *Query) {
-				if len(q.Filters) != 1 {
-					t.Fatalf("expected 1 filter, got %d", len(q.Filters))
-				}
-				if _, ok := q.Filters[0].(*StatusFilter); !ok {
-					t.Errorf("expected StatusFilter, got %T", q.Filters[0])
-				}
+				require.Len(t, q.Filters, 1)
+				assert.IsType(t, &StatusFilter{}, q.Filters[0])
 			},
 		},
 		{
@@ -39,12 +36,8 @@ func TestParseQuery(t *testing.T) {
 			query:   "not done",
 			wantErr: false,
 			check: func(t *testing.T, q *Query) {
-				if len(q.Filters) != 1 {
-					t.Fatalf("expected 1 filter, got %d", len(q.Filters))
-				}
-				if _, ok := q.Filters[0].(*StatusFilter); !ok {
-					t.Errorf("expected StatusFilter, got %T", q.Filters[0])
-				}
+				require.Len(t, q.Filters, 1)
+				assert.IsType(t, &StatusFilter{}, q.Filters[0])
 			},
 		},
 		{
@@ -52,12 +45,8 @@ func TestParseQuery(t *testing.T) {
 			query:   "due on 2024-01-15",
 			wantErr: false,
 			check: func(t *testing.T, q *Query) {
-				if len(q.Filters) != 1 {
-					t.Fatalf("expected 1 filter, got %d", len(q.Filters))
-				}
-				if _, ok := q.Filters[0].(*DueDateFilter); !ok {
-					t.Errorf("expected DueDateFilter, got %T", q.Filters[0])
-				}
+				require.Len(t, q.Filters, 1)
+				assert.IsType(t, &DueDateFilter{}, q.Filters[0])
 			},
 		},
 		{
@@ -65,12 +54,8 @@ func TestParseQuery(t *testing.T) {
 			query:   "tag include #shopping",
 			wantErr: false,
 			check: func(t *testing.T, q *Query) {
-				if len(q.Filters) != 1 {
-					t.Fatalf("expected 1 filter, got %d", len(q.Filters))
-				}
-				if _, ok := q.Filters[0].(*TagFilter); !ok {
-					t.Errorf("expected TagFilter, got %T", q.Filters[0])
-				}
+				require.Len(t, q.Filters, 1)
+				assert.IsType(t, &TagFilter{}, q.Filters[0])
 			},
 		},
 		{
@@ -78,9 +63,7 @@ func TestParseQuery(t *testing.T) {
 			query:   "not done\ntag include #shopping\ndue on or before 2024-01-15",
 			wantErr: false,
 			check: func(t *testing.T, q *Query) {
-				if len(q.Filters) != 3 {
-					t.Errorf("expected 3 filters, got %d", len(q.Filters))
-				}
+				assert.Len(t, q.Filters, 3)
 			},
 		},
 		{
@@ -88,9 +71,7 @@ func TestParseQuery(t *testing.T) {
 			query:   "done\n\nnot done",
 			wantErr: false,
 			check: func(t *testing.T, q *Query) {
-				if len(q.Filters) != 2 {
-					t.Errorf("expected 2 filters, got %d", len(q.Filters))
-				}
+				assert.Len(t, q.Filters, 2)
 			},
 		},
 	}
@@ -98,10 +79,12 @@ func TestParseQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := ParseQuery(tt.query)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseQuery() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
+
 			if tt.check != nil {
 				tt.check(t, got)
 			}
@@ -144,9 +127,8 @@ func TestStatusFilter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.filter.Matches(tt.task); got != tt.want {
-				t.Errorf("StatusFilter.Matches() = %v, want %v", got, tt.want)
-			}
+			got := tt.filter.Matches(tt.task)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -234,9 +216,8 @@ func TestDueDateFilter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.filter.Matches(tt.task); got != tt.want {
-				t.Errorf("DueDateFilter.Matches() = %v, want %v", got, tt.want)
-			}
+			got := tt.filter.Matches(tt.task)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -300,9 +281,8 @@ func TestTagFilter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.filter.Matches(tt.task); got != tt.want {
-				t.Errorf("TagFilter.Matches() = %v, want %v", got, tt.want)
-			}
+			got := tt.filter.Matches(tt.task)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -342,9 +322,8 @@ func TestPathFilter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.filter.Matches(tt.task); got != tt.want {
-				t.Errorf("PathFilter.Matches() = %v, want %v", got, tt.want)
-			}
+			got := tt.filter.Matches(tt.task)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -390,9 +369,8 @@ func TestDescriptionFilter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.filter.Matches(tt.task); got != tt.want {
-				t.Errorf("DescriptionFilter.Matches() = %v, want %v", got, tt.want)
-			}
+			got := tt.filter.Matches(tt.task)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -438,9 +416,8 @@ func TestQueryMatches(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := query.Matches(tt.task); got != tt.want {
-				t.Errorf("Query.Matches() = %v, want %v", got, tt.want)
-			}
+			got := query.Matches(tt.task)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

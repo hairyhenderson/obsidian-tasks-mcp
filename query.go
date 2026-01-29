@@ -142,21 +142,21 @@ func (f *DescriptionFilter) Matches(task *Task) bool {
 var (
 	statusDoneRegex    = regexp.MustCompile(`^done$`)
 	statusNotDoneRegex = regexp.MustCompile(`^not done$`)
-	
+
 	dueOnRegex         = regexp.MustCompile(`^due on (\d{4}-\d{2}-\d{2})$`)
 	dueOnOrBeforeRegex = regexp.MustCompile(`^due on or before (\d{4}-\d{2}-\d{2})$`)
 	dueOnOrAfterRegex  = regexp.MustCompile(`^due on or after (\d{4}-\d{2}-\d{2})$`)
 	dueNoneRegex       = regexp.MustCompile(`^no due date$`)
 	dueHasRegex        = regexp.MustCompile(`^has due date$`)
-	
+
 	tagIncludeRegex    = regexp.MustCompile(`^tag include #(\w+)$`)
 	tagNotIncludeRegex = regexp.MustCompile(`^tag do not include #(\w+)$`)
 	tagHasRegex        = regexp.MustCompile(`^has tags$`)
 	tagNoRegex         = regexp.MustCompile(`^no tags$`)
-	
+
 	pathIncludesRegex    = regexp.MustCompile(`^path includes (.+)$`)
 	pathNotIncludesRegex = regexp.MustCompile(`^path does not include (.+)$`)
-	
+
 	descIncludesRegex    = regexp.MustCompile(`^description includes (.+)$`)
 	descNotIncludesRegex = regexp.MustCompile(`^description does not include (.+)$`)
 )
@@ -164,19 +164,19 @@ var (
 // ParseQuery parses a query string into a Query struct
 func ParseQuery(queryStr string) (*Query, error) {
 	query := &Query{Filters: []Filter{}}
-	
+
 	lines := strings.Split(queryStr, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		
+
 		// Skip comments (lines starting with #)
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
-		
+
 		filter, err := parseFilterLine(line)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse filter line %q: %w", line, err)
@@ -185,13 +185,13 @@ func ParseQuery(queryStr string) (*Query, error) {
 			query.Filters = append(query.Filters, filter)
 		}
 	}
-	
+
 	return query, nil
 }
 
 func parseFilterLine(line string) (Filter, error) {
 	line = strings.TrimSpace(line)
-	
+
 	// Status filters
 	if statusDoneRegex.MatchString(line) {
 		return &StatusFilter{Done: true}, nil
@@ -199,7 +199,7 @@ func parseFilterLine(line string) (Filter, error) {
 	if statusNotDoneRegex.MatchString(line) {
 		return &StatusFilter{Done: false}, nil
 	}
-	
+
 	// Due date filters
 	if matches := dueOnRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &DueDateFilter{Op: DueOpOn, Date: matches[1]}, nil
@@ -216,7 +216,7 @@ func parseFilterLine(line string) (Filter, error) {
 	if dueHasRegex.MatchString(line) {
 		return &DueDateFilter{Op: DueOpHas}, nil
 	}
-	
+
 	// Tag filters
 	if matches := tagIncludeRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &TagFilter{Include: true, Tag: matches[1]}, nil
@@ -230,7 +230,7 @@ func parseFilterLine(line string) (Filter, error) {
 	if tagNoRegex.MatchString(line) {
 		return &TagFilter{HasAny: false}, nil
 	}
-	
+
 	// Path filters
 	if matches := pathIncludesRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &PathFilter{Include: true, Substring: matches[1]}, nil
@@ -238,7 +238,7 @@ func parseFilterLine(line string) (Filter, error) {
 	if matches := pathNotIncludesRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &PathFilter{Include: false, Substring: matches[1]}, nil
 	}
-	
+
 	// Description filters
 	if matches := descIncludesRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &DescriptionFilter{Include: true, Substring: matches[1]}, nil
@@ -246,7 +246,7 @@ func parseFilterLine(line string) (Filter, error) {
 	if matches := descNotIncludesRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &DescriptionFilter{Include: false, Substring: matches[1]}, nil
 	}
-	
+
 	// Unknown filter - return nil to skip
 	return nil, nil
 }
