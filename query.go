@@ -9,7 +9,7 @@ import (
 
 // Filter is an interface for task filters
 type Filter interface {
-	Matches(*Task) bool
+	Matches(task *Task) bool
 }
 
 // Query represents a parsed query with filters
@@ -26,6 +26,7 @@ func (f *StatusFilter) Matches(task *Task) bool {
 	if f.Done {
 		return task.Status == "complete"
 	}
+
 	return task.Status == "incomplete"
 }
 
@@ -42,8 +43,8 @@ const (
 
 // DueDateFilter filters tasks by due date
 type DueDateFilter struct {
+	Date string
 	Op   DueDateOp
-	Date string // YYYY-MM-DD format
 }
 
 func (f *DueDateFilter) Matches(task *Task) bool {
@@ -58,11 +59,13 @@ func (f *DueDateFilter) Matches(task *Task) bool {
 		if task.DueDate == "" {
 			return false
 		}
+
 		return compareDates(task.DueDate, f.Date) <= 0
 	case DueOpOnOrAfter:
 		if task.DueDate == "" {
 			return false
 		}
+
 		return compareDates(task.DueDate, f.Date) >= 0
 	default:
 		return false
@@ -71,24 +74,28 @@ func (f *DueDateFilter) Matches(task *Task) bool {
 
 func compareDates(date1, date2 string) int {
 	t1, err1 := time.Parse("2006-01-02", date1)
+
 	t2, err2 := time.Parse("2006-01-02", date2)
 	if err1 != nil || err2 != nil {
 		return 0
 	}
+
 	if t1.Before(t2) {
 		return -1
 	}
+
 	if t1.After(t2) {
 		return 1
 	}
+
 	return 0
 }
 
 // TagFilter filters tasks by tags
 type TagFilter struct {
-	Include bool
 	Tag     string
-	HasAny  bool // true for "has tags", false for "no tags"
+	Include bool
+	HasAny  bool
 }
 
 func (f *TagFilter) Matches(task *Task) bool {
@@ -99,6 +106,7 @@ func (f *TagFilter) Matches(task *Task) bool {
 		if f.HasAny {
 			return hasTags
 		}
+
 		return !hasTags
 	}
 
@@ -108,13 +116,14 @@ func (f *TagFilter) Matches(task *Task) bool {
 			return f.Include
 		}
 	}
+
 	return !f.Include
 }
 
 // PathFilter filters tasks by file path
 type PathFilter struct {
-	Include   bool
 	Substring string
+	Include   bool
 }
 
 func (f *PathFilter) Matches(task *Task) bool {
@@ -122,13 +131,14 @@ func (f *PathFilter) Matches(task *Task) bool {
 	if f.Include {
 		return contains
 	}
+
 	return !contains
 }
 
 // DescriptionFilter filters tasks by description
 type DescriptionFilter struct {
-	Include   bool
 	Substring string
+	Include   bool
 }
 
 func (f *DescriptionFilter) Matches(task *Task) bool {
@@ -136,6 +146,7 @@ func (f *DescriptionFilter) Matches(task *Task) bool {
 	if f.Include {
 		return contains
 	}
+
 	return !contains
 }
 
@@ -181,6 +192,7 @@ func ParseQuery(queryStr string) (*Query, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse filter line %q: %w", line, err)
 		}
+
 		if filter != nil {
 			query.Filters = append(query.Filters, filter)
 		}
@@ -189,6 +201,7 @@ func ParseQuery(queryStr string) (*Query, error) {
 	return query, nil
 }
 
+//nolint:gocyclo,funlen,unparam // parsing different filter types requires branching
 func parseFilterLine(line string) (Filter, error) {
 	line = strings.TrimSpace(line)
 
@@ -196,6 +209,7 @@ func parseFilterLine(line string) (Filter, error) {
 	if statusDoneRegex.MatchString(line) {
 		return &StatusFilter{Done: true}, nil
 	}
+
 	if statusNotDoneRegex.MatchString(line) {
 		return &StatusFilter{Done: false}, nil
 	}
@@ -204,15 +218,19 @@ func parseFilterLine(line string) (Filter, error) {
 	if matches := dueOnRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &DueDateFilter{Op: DueOpOn, Date: matches[1]}, nil
 	}
+
 	if matches := dueOnOrBeforeRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &DueDateFilter{Op: DueOpOnOrBefore, Date: matches[1]}, nil
 	}
+
 	if matches := dueOnOrAfterRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &DueDateFilter{Op: DueOpOnOrAfter, Date: matches[1]}, nil
 	}
+
 	if dueNoneRegex.MatchString(line) {
 		return &DueDateFilter{Op: DueOpNone}, nil
 	}
+
 	if dueHasRegex.MatchString(line) {
 		return &DueDateFilter{Op: DueOpHas}, nil
 	}
@@ -221,12 +239,15 @@ func parseFilterLine(line string) (Filter, error) {
 	if matches := tagIncludeRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &TagFilter{Include: true, Tag: matches[1]}, nil
 	}
+
 	if matches := tagNotIncludeRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &TagFilter{Include: false, Tag: matches[1]}, nil
 	}
+
 	if tagHasRegex.MatchString(line) {
 		return &TagFilter{HasAny: true}, nil
 	}
+
 	if tagNoRegex.MatchString(line) {
 		return &TagFilter{HasAny: false}, nil
 	}
@@ -235,6 +256,7 @@ func parseFilterLine(line string) (Filter, error) {
 	if matches := pathIncludesRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &PathFilter{Include: true, Substring: matches[1]}, nil
 	}
+
 	if matches := pathNotIncludesRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &PathFilter{Include: false, Substring: matches[1]}, nil
 	}
@@ -243,6 +265,7 @@ func parseFilterLine(line string) (Filter, error) {
 	if matches := descIncludesRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &DescriptionFilter{Include: true, Substring: matches[1]}, nil
 	}
+
 	if matches := descNotIncludesRegex.FindStringSubmatch(line); len(matches) >= 2 {
 		return &DescriptionFilter{Include: false, Substring: matches[1]}, nil
 	}
@@ -258,5 +281,6 @@ func (q *Query) Matches(task *Task) bool {
 			return false
 		}
 	}
+
 	return true
 }

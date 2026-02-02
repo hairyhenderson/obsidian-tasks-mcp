@@ -7,13 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:funlen // comprehensive test cases
 func TestParseTask(t *testing.T) {
 	tests := []struct {
+		want       *Task
 		name       string
 		line       string
 		filePath   string
 		lineNumber int
-		want       *Task
 	}{
 		{
 			name:       "simple incomplete task",
