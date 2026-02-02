@@ -9,7 +9,8 @@ import (
 )
 
 type QueryTasksInput struct {
-	Query    string   `json:"query" jsonschema:"Tasks query string with filters (one filter per line). Example: not done\ntag include #shopping"`
+	Query string `json:"query" jsonschema:"Tasks query string with filters (one filter per line). Example: not done\ntag include #shopping"`
+
 	RootDirs []string `json:"rootDirs" jsonschema:"Root directories to scan for markdown files"`
 }
 
@@ -17,7 +18,7 @@ type QueryTasksOutput struct {
 	Tasks []*Task `json:"tasks"`
 }
 
-func queryTasks(ctx context.Context, req *mcp.CallToolRequest, input QueryTasksInput) (
+func queryTasks(_ context.Context, _ *mcp.CallToolRequest, input QueryTasksInput) (
 	*mcp.CallToolResult,
 	QueryTasksOutput,
 	error,
@@ -38,7 +39,9 @@ func queryTasks(ctx context.Context, req *mcp.CallToolRequest, input QueryTasksI
 
 	// Parse query
 	var query *Query
+
 	var err error
+
 	if input.Query != "" {
 		query, err = ParseQuery(input.Query)
 		if err != nil {
@@ -49,7 +52,7 @@ func queryTasks(ctx context.Context, req *mcp.CallToolRequest, input QueryTasksI
 						Text: "failed to parse query: " + err.Error(),
 					},
 				},
-			}, QueryTasksOutput{Tasks: []*Task{}}, nil
+			}, QueryTasksOutput{Tasks: []*Task{}}, err
 		}
 	}
 
@@ -63,7 +66,7 @@ func queryTasks(ctx context.Context, req *mcp.CallToolRequest, input QueryTasksI
 					Text: "failed to scan tasks: " + err.Error(),
 				},
 			},
-		}, QueryTasksOutput{Tasks: []*Task{}}, nil
+		}, QueryTasksOutput{Tasks: []*Task{}}, err
 	}
 
 	// Return results (tasks is always a slice, never nil, from ScanTasksWithQuery)
@@ -106,5 +109,6 @@ func (f *flagList) String() string {
 
 func (f *flagList) Set(value string) error {
 	*f = append(*f, value)
+
 	return nil
 }

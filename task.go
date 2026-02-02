@@ -10,11 +10,11 @@ import (
 type Task struct {
 	ID          string   `json:"id"`
 	Description string   `json:"description"`
-	Status      string   `json:"status"` // "complete" or "incomplete"
+	Status      string   `json:"status"`
 	FilePath    string   `json:"filePath"`
-	LineNumber  int      `json:"lineNumber"`
+	DueDate     string   `json:"dueDate,omitempty"`
 	Tags        []string `json:"tags"`
-	DueDate     string   `json:"dueDate,omitempty"` // YYYY-MM-DD format
+	LineNumber  int      `json:"lineNumber"`
 }
 
 var (
@@ -46,6 +46,7 @@ func ParseTask(line string, filePath string, lineNumber int) *Task {
 
 	// Extract due date
 	var dueDate string
+
 	dueMatches := dueDateRegex.FindStringSubmatch(content)
 	if len(dueMatches) >= 2 {
 		dueDate = dueMatches[1]

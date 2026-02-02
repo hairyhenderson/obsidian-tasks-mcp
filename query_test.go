@@ -7,12 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:funlen // comprehensive test cases
 func TestParseQuery(t *testing.T) {
 	tests := []struct {
+		check   func(*testing.T, *Query)
 		name    string
 		query   string
 		wantErr bool
-		check   func(*testing.T, *Query)
 	}{
 		{
 			name:    "empty query",
@@ -94,9 +95,9 @@ func TestParseQuery(t *testing.T) {
 
 func TestStatusFilter(t *testing.T) {
 	tests := []struct {
-		name   string
 		filter *StatusFilter
 		task   *Task
+		name   string
 		want   bool
 	}{
 		{
@@ -133,11 +134,12 @@ func TestStatusFilter(t *testing.T) {
 	}
 }
 
+//nolint:funlen // comprehensive test cases
 func TestDueDateFilter(t *testing.T) {
 	tests := []struct {
-		name   string
 		filter *DueDateFilter
 		task   *Task
+		name   string
 		want   bool
 	}{
 		{
@@ -222,11 +224,12 @@ func TestDueDateFilter(t *testing.T) {
 	}
 }
 
+//nolint:funlen // comprehensive test cases
 func TestTagFilter(t *testing.T) {
 	tests := []struct {
-		name   string
 		filter *TagFilter
 		task   *Task
+		name   string
 		want   bool
 	}{
 		{
@@ -289,9 +292,9 @@ func TestTagFilter(t *testing.T) {
 
 func TestPathFilter(t *testing.T) {
 	tests := []struct {
-		name   string
 		filter *PathFilter
 		task   *Task
+		name   string
 		want   bool
 	}{
 		{
@@ -330,9 +333,9 @@ func TestPathFilter(t *testing.T) {
 
 func TestDescriptionFilter(t *testing.T) {
 	tests := []struct {
-		name   string
 		filter *DescriptionFilter
 		task   *Task
+		name   string
 		want   bool
 	}{
 		{
@@ -384,8 +387,8 @@ func TestQueryMatches(t *testing.T) {
 	}
 
 	tests := []struct {
-		name string
 		task *Task
+		name string
 		want bool
 	}{
 		{

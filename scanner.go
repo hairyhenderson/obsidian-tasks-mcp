@@ -15,6 +15,8 @@ func ScanTasks(roots []string) ([]*Task, error) {
 }
 
 // ScanTasksWithQuery scans markdown files and filters tasks using the provided query
+//
+//nolint:gocyclo // complexity from walking directories and filtering
 func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, error) {
 	var allTasks []*Task
 
@@ -34,10 +36,11 @@ func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, error) {
 				return nil
 			}
 
-			tasks, err := parseTasksFromFile(path, absRoot)
-			if err != nil {
+			tasks, parseErr := parseTasksFromFile(path, absRoot)
+			if parseErr != nil {
 				// Log error but continue scanning other files
-				return nil
+				// We could log parseErr here if we had a logger
+				return nil //nolint:nilerr // intentionally continue on parse errors
 			}
 
 			// Filter tasks if query is provided
@@ -63,6 +66,7 @@ func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, error) {
 		if allTasks[i].FilePath != allTasks[j].FilePath {
 			return allTasks[i].FilePath < allTasks[j].FilePath
 		}
+
 		return allTasks[i].LineNumber < allTasks[j].LineNumber
 	})
 
@@ -77,6 +81,7 @@ func parseTasksFromFile(filePath, rootDir string) ([]*Task, error) {
 	defer file.Close()
 
 	var tasks []*Task
+
 	scanner := bufio.NewScanner(file)
 	lineNumber := 0
 
@@ -91,6 +96,7 @@ func parseTasksFromFile(filePath, rootDir string) ([]*Task, error) {
 			if err == nil {
 				task.FilePath = relPath
 			}
+
 			tasks = append(tasks, task)
 		}
 	}
