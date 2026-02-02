@@ -76,15 +76,17 @@ You can specify multiple root directories:
 Run tests:
 
 ```bash
-go test ./...
+make test
 ```
 
 Lint:
 
 ```bash
-golangci-lint run
+make lint
 ```
 
 ## License
 
-MIT
+This project is licensed under the [MIT License](LICENSE). See the LICENSE file for the full license text.
+
+Copyright (c) 2026 Dave Henderson
