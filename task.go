@@ -39,6 +39,9 @@ func ParseTask(line string, filePath string, lineNumber int) *Task {
 
 	// Extract tags
 	tags := tagRegex.FindAllString(content, -1)
+	if tags == nil {
+		tags = []string{}
+	}
 	// Remove # prefix from tags
 	for i, tag := range tags {
 		tags[i] = strings.TrimPrefix(tag, "#")
