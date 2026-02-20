@@ -2,10 +2,11 @@ package main
 
 import (
 	"bufio"
+	"cmp"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -18,7 +19,7 @@ func ScanTasks(roots []string) ([]*Task, error) {
 //
 //nolint:gocyclo // complexity from walking directories and filtering
 func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, error) {
-	var allTasks []*Task
+	allTasks := make([]*Task, 0)
 
 	for _, root := range roots {
 		absRoot, err := filepath.Abs(root)
@@ -62,12 +63,12 @@ func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, error) {
 	}
 
 	// Sort by file path then line number
-	sort.Slice(allTasks, func(i, j int) bool {
-		if allTasks[i].FilePath != allTasks[j].FilePath {
-			return allTasks[i].FilePath < allTasks[j].FilePath
+	slices.SortFunc(allTasks, func(a, b *Task) int {
+		if c := cmp.Compare(a.FilePath, b.FilePath); c != 0 {
+			return c
 		}
 
-		return allTasks[i].LineNumber < allTasks[j].LineNumber
+		return cmp.Compare(a.LineNumber, b.LineNumber)
 	})
 
 	return allTasks, nil
