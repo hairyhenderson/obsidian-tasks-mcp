@@ -75,6 +75,77 @@ func TestParseQuery(t *testing.T) {
 				assert.Len(t, q.Filters, 2)
 			},
 		},
+		{
+			name:    "limit only",
+			query:   "limit 5",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				assert.Empty(t, q.Filters)
+				assert.Equal(t, 5, q.Limit)
+			},
+		},
+		{
+			name:    "limit with filter",
+			query:   "not done\nlimit 10",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				assert.Equal(t, 10, q.Limit)
+			},
+		},
+		{
+			name:    "limit 0 means no limit",
+			query:   "limit 0",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				assert.Empty(t, q.Filters)
+				assert.Equal(t, 0, q.Limit)
+			},
+		},
+		{
+			name:    "limit with sort lines",
+			query:   "not done\nsort by priority reverse\nlimit 5",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				assert.Equal(t, 5, q.Limit)
+			},
+		},
+		{
+			name:    "sort by priority reverse",
+			query:   "not done\nsort by priority reverse",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				require.Len(t, q.SortBy, 1)
+				assert.Equal(t, SortByPriority, q.SortBy[0].Field)
+				assert.True(t, q.SortBy[0].Reverse)
+			},
+		},
+		{
+			name:    "sort by due",
+			query:   "not done\nsort by due",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				require.Len(t, q.SortBy, 1)
+				assert.Equal(t, SortByDue, q.SortBy[0].Field)
+				assert.False(t, q.SortBy[0].Reverse)
+			},
+		},
+		{
+			name:    "multiple sort keys",
+			query:   "not done\nsort by priority reverse\nsort by due reverse",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				require.Len(t, q.SortBy, 2)
+				assert.Equal(t, SortByPriority, q.SortBy[0].Field)
+				assert.True(t, q.SortBy[0].Reverse)
+				assert.Equal(t, SortByDue, q.SortBy[1].Field)
+				assert.True(t, q.SortBy[1].Reverse)
+			},
+		},
 	}
 
 	for _, tt := range tests {

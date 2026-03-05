@@ -158,6 +158,102 @@ func TestParseTask(t *testing.T) {
 				DueDate:     "",
 			},
 		},
+		{
+			name:       "task with highest priority emoji",
+			line:       "- [ ] Urgent task 🔺",
+			filePath:   "todo.md",
+			lineNumber: 11,
+			want: &Task{
+				ID:          "todo.md:11",
+				Description: "Urgent task",
+				Status:      "incomplete",
+				FilePath:    "todo.md",
+				LineNumber:  11,
+				Tags:        nil,
+				DueDate:     "",
+				Priority:    PriorityHighest,
+			},
+		},
+		{
+			name:       "task with high priority emoji",
+			line:       "- [ ] High task ⏫",
+			filePath:   "todo.md",
+			lineNumber: 12,
+			want: &Task{
+				ID:          "todo.md:12",
+				Description: "High task",
+				Status:      "incomplete",
+				FilePath:    "todo.md",
+				LineNumber:  12,
+				Tags:        nil,
+				DueDate:     "",
+				Priority:    PriorityHigh,
+			},
+		},
+		{
+			name:       "task with medium priority emoji",
+			line:       "- [ ] Medium task 🔼",
+			filePath:   "todo.md",
+			lineNumber: 13,
+			want: &Task{
+				ID:          "todo.md:13",
+				Description: "Medium task",
+				Status:      "incomplete",
+				FilePath:    "todo.md",
+				LineNumber:  13,
+				Tags:        nil,
+				DueDate:     "",
+				Priority:    PriorityMedium,
+			},
+		},
+		{
+			name:       "task with low priority emoji",
+			line:       "- [ ] Low task 🔽",
+			filePath:   "todo.md",
+			lineNumber: 14,
+			want: &Task{
+				ID:          "todo.md:14",
+				Description: "Low task",
+				Status:      "incomplete",
+				FilePath:    "todo.md",
+				LineNumber:  14,
+				Tags:        nil,
+				DueDate:     "",
+				Priority:    PriorityLow,
+			},
+		},
+		{
+			name:       "task with no priority emoji",
+			line:       "- [ ] Normal task",
+			filePath:   "todo.md",
+			lineNumber: 15,
+			want: &Task{
+				ID:          "todo.md:15",
+				Description: "Normal task",
+				Status:      "incomplete",
+				FilePath:    "todo.md",
+				LineNumber:  15,
+				Tags:        nil,
+				DueDate:     "",
+				Priority:    PriorityNone,
+			},
+		},
+		{
+			name:       "priority emoji stripped from description",
+			line:       "- [ ] Do thing ⏫ #action 📅 2026-03-04",
+			filePath:   "todo.md",
+			lineNumber: 16,
+			want: &Task{
+				ID:          "todo.md:16",
+				Description: "Do thing",
+				Status:      "incomplete",
+				FilePath:    "todo.md",
+				LineNumber:  16,
+				Tags:        []string{"action"},
+				DueDate:     "2026-03-04",
+				Priority:    PriorityHigh,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -178,6 +274,7 @@ func TestParseTask(t *testing.T) {
 			assert.Equal(t, tt.want.LineNumber, got.LineNumber)
 			assert.Equal(t, tt.want.Tags, got.Tags)
 			assert.Equal(t, tt.want.DueDate, got.DueDate)
+			assert.Equal(t, tt.want.Priority, got.Priority)
 		})
 	}
 }

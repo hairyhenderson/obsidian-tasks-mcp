@@ -84,3 +84,88 @@ func TestScanTasksWithQuery(t *testing.T) {
 	require.Len(t, tasks, 1)
 	assert.Equal(t, "Buy groceries", tasks[0].Description)
 }
+
+func TestScanTasksWithQuerySortByPriority(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	file1 := filepath.Join(tmpDir, "todo.md")
+	err := os.WriteFile(file1, []byte(`# Tasks
+
+- [ ] Low priority task 🔽
+- [ ] High priority task ⏫
+- [ ] Normal task
+- [ ] Highest priority task 🔺
+- [ ] Medium priority task 🔼
+`), 0o600)
+	require.NoError(t, err)
+
+	query := &Query{
+		Filters: []Filter{&StatusFilter{Done: false}},
+		SortBy:  []SortKey{{Field: SortByPriority, Reverse: true}},
+	}
+
+	tasks, err := ScanTasksWithQuery([]string{tmpDir}, query)
+	require.NoError(t, err)
+	require.Len(t, tasks, 5)
+
+	assert.Equal(t, PriorityHighest, tasks[0].Priority)
+	assert.Equal(t, PriorityHigh, tasks[1].Priority)
+	assert.Equal(t, PriorityMedium, tasks[2].Priority)
+	assert.Equal(t, PriorityLow, tasks[3].Priority)
+	assert.Equal(t, PriorityNone, tasks[4].Priority)
+}
+
+func TestScanTasksWithQuerySortByDue(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	file1 := filepath.Join(tmpDir, "todo.md")
+	err := os.WriteFile(file1, []byte(`# Tasks
+
+- [ ] Task C 📅 2026-03-01
+- [ ] Task A 📅 2026-01-01
+- [ ] Task no due
+- [ ] Task B 📅 2026-02-01
+`), 0o600)
+	require.NoError(t, err)
+
+	// sort by due reverse = newest first
+	query := &Query{
+		Filters: []Filter{&StatusFilter{Done: false}},
+		SortBy:  []SortKey{{Field: SortByDue, Reverse: true}},
+	}
+
+	tasks, err := ScanTasksWithQuery([]string{tmpDir}, query)
+	require.NoError(t, err)
+	require.Len(t, tasks, 4)
+
+	// Tasks with no due date sort last
+	assert.Equal(t, "2026-03-01", tasks[0].DueDate)
+	assert.Equal(t, "2026-02-01", tasks[1].DueDate)
+	assert.Equal(t, "2026-01-01", tasks[2].DueDate)
+	assert.Equal(t, "", tasks[3].DueDate)
+}
+
+func TestScanTasksWithQueryLimit(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	file1 := filepath.Join(tmpDir, "todo.md")
+	err := os.WriteFile(file1, []byte(`# Tasks
+
+- [ ] Task one
+- [ ] Task two
+- [ ] Task three
+- [ ] Task four
+- [ ] Task five
+`), 0o600)
+	require.NoError(t, err)
+
+	query := &Query{
+		Filters: []Filter{&StatusFilter{Done: false}},
+		Limit:   3,
+	}
+
+	tasks, err := ScanTasksWithQuery([]string{tmpDir}, query)
+	require.NoError(t, err)
+
+	assert.Len(t, tasks, 3)
+}

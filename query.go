@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -12,9 +13,25 @@ type Filter interface {
 	Matches(task *Task) bool
 }
 
+// SortField identifies a field to sort by.
+type SortField int
+
+const (
+	SortByPriority SortField = iota
+	SortByDue
+)
+
+// SortKey is a single sort criterion.
+type SortKey struct {
+	Field   SortField
+	Reverse bool
+}
+
 // Query represents a parsed query with filters
 type Query struct {
 	Filters []Filter
+	SortBy  []SortKey
+	Limit   int // 0 means no limit
 }
 
 // StatusFilter filters tasks by completion status
@@ -170,6 +187,9 @@ var (
 
 	descIncludesRegex    = regexp.MustCompile(`^description includes (.+)$`)
 	descNotIncludesRegex = regexp.MustCompile(`^description does not include (.+)$`)
+
+	limitRegex   = regexp.MustCompile(`^limit (\d+)$`)
+	sortByRegex  = regexp.MustCompile(`^sort by (priority|due)(?: (reverse))?$`)
 )
 
 // ParseQuery parses a query string into a Query struct
@@ -185,6 +205,31 @@ func ParseQuery(queryStr string) (*Query, error) {
 
 		// Skip comments (lines starting with #)
 		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		if matches := limitRegex.FindStringSubmatch(line); len(matches) >= 2 {
+			n, _ := strconv.Atoi(matches[1])
+			query.Limit = n
+
+			continue
+		}
+
+		if matches := sortByRegex.FindStringSubmatch(line); len(matches) >= 2 {
+			key := SortKey{}
+			switch matches[1] {
+			case "priority":
+				key.Field = SortByPriority
+			case "due":
+				key.Field = SortByDue
+			}
+
+			if len(matches) >= 3 && matches[2] == "reverse" {
+				key.Reverse = true
+			}
+
+			query.SortBy = append(query.SortBy, key)
+
 			continue
 		}
 

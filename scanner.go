@@ -17,7 +17,7 @@ func ScanTasks(roots []string) ([]*Task, error) {
 
 // ScanTasksWithQuery scans markdown files and filters tasks using the provided query
 //
-//nolint:gocyclo // complexity from walking directories and filtering
+//nolint:gocyclo,gocognit,funlen,nestif // complexity from walking directories and filtering
 func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, error) {
 	allTasks := make([]*Task, 0)
 
@@ -62,16 +62,79 @@ func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, error) {
 		}
 	}
 
-	// Sort by file path then line number
-	slices.SortFunc(allTasks, func(a, b *Task) int {
-		if c := cmp.Compare(a.FilePath, b.FilePath); c != 0 {
-			return c
-		}
+	if query != nil && len(query.SortBy) > 0 {
+		slices.SortStableFunc(allTasks, func(a, b *Task) int {
+			for _, key := range query.SortBy {
+				sentinel, c := compareByField(a, b, key.Field)
+				if sentinel != 0 {
+					return sentinel
+				}
 
-		return cmp.Compare(a.LineNumber, b.LineNumber)
-	})
+				if c != 0 {
+					if key.Reverse {
+						return -c
+					}
+
+					return c
+				}
+			}
+
+			if c := cmp.Compare(a.FilePath, b.FilePath); c != 0 {
+				return c
+			}
+
+			return cmp.Compare(a.LineNumber, b.LineNumber)
+		})
+	} else {
+		slices.SortFunc(allTasks, func(a, b *Task) int {
+			if c := cmp.Compare(a.FilePath, b.FilePath); c != 0 {
+				return c
+			}
+
+			return cmp.Compare(a.LineNumber, b.LineNumber)
+		})
+	}
+
+	if query != nil && query.Limit > 0 && len(allTasks) > query.Limit {
+		allTasks = allTasks[:query.Limit]
+	}
 
 	return allTasks, nil
+}
+
+// compareByField returns (sentinel, cmp). If sentinel != 0 it takes
+// priority and must not be reversed (used for "always sort last" values
+// like PriorityNone / empty due date). Otherwise cmp is the normal
+// comparison result that may be reversed by the caller.
+//
+//nolint:gocyclo // branching per field + sentinel cases
+func compareByField(a, b *Task, field SortField) (int, int) {
+	switch field {
+	case SortByPriority:
+		switch {
+		case a.Priority == PriorityNone && b.Priority == PriorityNone:
+			return 0, 0
+		case a.Priority == PriorityNone:
+			return 1, 0
+		case b.Priority == PriorityNone:
+			return -1, 0
+		}
+
+		return 0, cmp.Compare(a.Priority, b.Priority)
+	case SortByDue:
+		switch {
+		case a.DueDate == "" && b.DueDate == "":
+			return 0, 0
+		case a.DueDate == "":
+			return 1, 0
+		case b.DueDate == "":
+			return -1, 0
+		}
+
+		return 0, compareDates(a.DueDate, b.DueDate)
+	default:
+		return 0, 0
+	}
 }
 
 func parseTasksFromFile(filePath, rootDir string) ([]*Task, error) {
