@@ -64,19 +64,62 @@ func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, int, error) {
 		}
 	}
 
-	// Sort by file path then line number
-	slices.SortFunc(allTasks, func(a, b *Task) int {
+	sortTasks(allTasks, query)
+
+	total := len(allTasks)
+	allTasks = applyPagination(allTasks, query)
+
+	return allTasks, total, nil
+}
+
+//nolint:gocognit,gocyclo // multi-key sort with special "none/empty sorts last" logic
+func sortTasks(tasks []*Task, query *Query) {
+	slices.SortStableFunc(tasks, func(a, b *Task) int {
+		if query != nil {
+			for _, key := range query.SortBy {
+				var c int
+
+				switch key.Field {
+				case SortByPriority:
+					switch {
+					case a.Priority == PriorityNone && b.Priority == PriorityNone:
+						c = 0
+					case a.Priority == PriorityNone:
+						return 1
+					case b.Priority == PriorityNone:
+						return -1
+					default:
+						c = cmp.Compare(a.Priority, b.Priority)
+					}
+				case SortByDue:
+					switch {
+					case a.DueDate == "" && b.DueDate == "":
+						c = 0
+					case a.DueDate == "":
+						return 1
+					case b.DueDate == "":
+						return -1
+					default:
+						c = cmp.Compare(a.DueDate, b.DueDate)
+					}
+				}
+
+				if c != 0 {
+					if key.Reverse {
+						return -c
+					}
+
+					return c
+				}
+			}
+		}
+
 		if c := cmp.Compare(a.FilePath, b.FilePath); c != 0 {
 			return c
 		}
 
 		return cmp.Compare(a.LineNumber, b.LineNumber)
 	})
-
-	total := len(allTasks)
-	allTasks = applyPagination(allTasks, query)
-
-	return allTasks, total, nil
 }
 
 func applyPagination(tasks []*Task, query *Query) []*Task {
