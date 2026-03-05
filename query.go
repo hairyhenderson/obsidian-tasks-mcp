@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -15,6 +16,8 @@ type Filter interface {
 // Query represents a parsed query with filters
 type Query struct {
 	Filters []Filter
+	Limit   int // 0 means no limit
+	Offset  int // 0 means no offset
 }
 
 // StatusFilter filters tasks by completion status
@@ -170,14 +173,17 @@ var (
 
 	descIncludesRegex    = regexp.MustCompile(`^description includes (.+)$`)
 	descNotIncludesRegex = regexp.MustCompile(`^description does not include (.+)$`)
+
+	limitRegex  = regexp.MustCompile(`^limit (\d+)$`)
+	offsetRegex = regexp.MustCompile(`^offset (\d+)$`)
 )
 
 // ParseQuery parses a query string into a Query struct
 func ParseQuery(queryStr string) (*Query, error) {
 	query := &Query{Filters: []Filter{}}
 
-	lines := strings.Split(queryStr, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(queryStr, "\n")
+	for line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -185,6 +191,28 @@ func ParseQuery(queryStr string) (*Query, error) {
 
 		// Skip comments (lines starting with #)
 		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		if matches := limitRegex.FindStringSubmatch(line); len(matches) >= 2 {
+			n, err := strconv.Atoi(matches[1])
+			if err != nil {
+				return nil, fmt.Errorf("invalid limit value %q: %w", matches[1], err)
+			}
+
+			query.Limit = n
+
+			continue
+		}
+
+		if matches := offsetRegex.FindStringSubmatch(line); len(matches) >= 2 {
+			n, err := strconv.Atoi(matches[1])
+			if err != nil {
+				return nil, fmt.Errorf("invalid offset value %q: %w", matches[1], err)
+			}
+
+			query.Offset = n
+
 			continue
 		}
 

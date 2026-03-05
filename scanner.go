@@ -12,19 +12,21 @@ import (
 
 // ScanTasks scans markdown files in the given root directories and returns all tasks
 func ScanTasks(roots []string) ([]*Task, error) {
-	return ScanTasksWithQuery(roots, nil)
+	tasks, _, err := ScanTasksWithQuery(roots, nil)
+
+	return tasks, err
 }
 
 // ScanTasksWithQuery scans markdown files and filters tasks using the provided query
 //
 //nolint:gocyclo // complexity from walking directories and filtering
-func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, error) {
+func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, int, error) {
 	allTasks := make([]*Task, 0)
 
 	for _, root := range roots {
 		absRoot, err := filepath.Abs(root)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get absolute path for %q: %w", root, err)
+			return nil, 0, fmt.Errorf("failed to get absolute path for %q: %w", root, err)
 		}
 
 		err = filepath.Walk(absRoot, func(path string, info os.FileInfo, err error) error {
@@ -58,7 +60,7 @@ func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, error) {
 			return nil
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to walk directory %q: %w", root, err)
+			return nil, 0, fmt.Errorf("failed to walk directory %q: %w", root, err)
 		}
 	}
 
@@ -71,7 +73,30 @@ func ScanTasksWithQuery(roots []string, query *Query) ([]*Task, error) {
 		return cmp.Compare(a.LineNumber, b.LineNumber)
 	})
 
-	return allTasks, nil
+	total := len(allTasks)
+	allTasks = applyPagination(allTasks, query)
+
+	return allTasks, total, nil
+}
+
+func applyPagination(tasks []*Task, query *Query) []*Task {
+	if query == nil {
+		return tasks
+	}
+
+	if query.Offset > 0 {
+		if query.Offset >= len(tasks) {
+			return tasks[:0]
+		}
+
+		tasks = tasks[query.Offset:]
+	}
+
+	if query.Limit > 0 && query.Limit < len(tasks) {
+		tasks = tasks[:query.Limit]
+	}
+
+	return tasks
 }
 
 func parseTasksFromFile(filePath, rootDir string) ([]*Task, error) {
