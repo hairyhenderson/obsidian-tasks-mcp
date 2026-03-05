@@ -160,8 +160,8 @@ var (
 	dueNoneRegex       = regexp.MustCompile(`^no due date$`)
 	dueHasRegex        = regexp.MustCompile(`^has due date$`)
 
-	tagIncludeRegex    = regexp.MustCompile(`^tag include #(\w+)$`)
-	tagNotIncludeRegex = regexp.MustCompile(`^tag do not include #(\w+)$`)
+	tagIncludeRegex    = regexp.MustCompile(`^tags? include #(\w+)$`)
+	tagNotIncludeRegex = regexp.MustCompile(`^tags? do not include #(\w+)$`)
 	tagHasRegex        = regexp.MustCompile(`^has tags$`)
 	tagNoRegex         = regexp.MustCompile(`^no tags$`)
 

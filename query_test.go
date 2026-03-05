@@ -60,6 +60,30 @@ func TestParseQuery(t *testing.T) {
 			},
 		},
 		{
+			name:    "tags include (plural)",
+			query:   "tags include #shopping",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				f, ok := q.Filters[0].(*TagFilter)
+				require.True(t, ok)
+				assert.True(t, f.Include)
+				assert.Equal(t, "shopping", f.Tag)
+			},
+		},
+		{
+			name:    "tags do not include (plural)",
+			query:   "tags do not include #shopping",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				f, ok := q.Filters[0].(*TagFilter)
+				require.True(t, ok)
+				assert.False(t, f.Include)
+				assert.Equal(t, "shopping", f.Tag)
+			},
+		},
+		{
 			name:    "multiple filters",
 			query:   "not done\ntag include #shopping\ndue on or before 2024-01-15",
 			wantErr: false,
