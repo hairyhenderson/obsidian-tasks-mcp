@@ -99,6 +99,85 @@ func TestParseQuery(t *testing.T) {
 				assert.Len(t, q.Filters, 2)
 			},
 		},
+		{
+			name:    "offset only",
+			query:   "offset 5",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				assert.Empty(t, q.Filters)
+				assert.Equal(t, 5, q.Offset)
+			},
+		},
+		{
+			name:    "limit only",
+			query:   "limit 10",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				assert.Empty(t, q.Filters)
+				assert.Equal(t, 10, q.Limit)
+			},
+		},
+		{
+			name:    "filter with offset",
+			query:   "not done\noffset 10",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				assert.Equal(t, 10, q.Offset)
+			},
+		},
+		{
+			name:    "filter with limit and offset",
+			query:   "not done\nlimit 5\noffset 5",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				assert.Equal(t, 5, q.Limit)
+				assert.Equal(t, 5, q.Offset)
+			},
+		},
+		{
+			name:    "offset 0 is valid",
+			query:   "offset 0",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				assert.Equal(t, 0, q.Offset)
+			},
+		},
+		{
+			name:    "limit 0 is valid",
+			query:   "limit 0",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				assert.Equal(t, 0, q.Limit)
+			},
+		},
+		{
+			name:    "overflow limit is an error",
+			query:   "limit 999999999999999999999",
+			wantErr: true,
+		},
+		{
+			name:    "overflow offset is an error",
+			query:   "offset 999999999999999999999",
+			wantErr: true,
+		},
+		{
+			name:    "negative limit is ignored as unknown line",
+			query:   "limit -1",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				assert.Equal(t, 0, q.Limit)
+			},
+		},
+		{
+			name:    "negative offset is ignored as unknown line",
+			query:   "offset -1",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				assert.Equal(t, 0, q.Offset)
+			},
+		},
 	}
 
 	for _, tt := range tests {

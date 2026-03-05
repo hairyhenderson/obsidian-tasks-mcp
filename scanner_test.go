@@ -77,10 +77,87 @@ func TestScanTasksWithQuery(t *testing.T) {
 	query, err := ParseQuery("not done\ntag include #shopping")
 	require.NoError(t, err)
 
-	tasks, err := ScanTasksWithQuery([]string{tmpDir}, query)
+	tasks, total, err := ScanTasksWithQuery([]string{tmpDir}, query)
 	require.NoError(t, err)
 
 	// Should find 1 task
 	require.Len(t, tasks, 1)
 	assert.Equal(t, "Buy groceries", tasks[0].Description)
+	assert.Equal(t, 1, total)
+}
+
+//nolint:funlen // comprehensive pagination test cases
+func TestScanTasksWithQuery_OffsetAndLimit(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	file1 := filepath.Join(tmpDir, "todo.md")
+	err := os.WriteFile(file1, []byte(`# Tasks
+
+- [ ] Task 1
+- [ ] Task 2
+- [ ] Task 3
+- [ ] Task 4
+- [ ] Task 5
+`), 0o600)
+	require.NoError(t, err)
+
+	t.Run("offset and limit", func(t *testing.T) {
+		query := &Query{Offset: 2, Limit: 2}
+		tasks, total, err := ScanTasksWithQuery([]string{tmpDir}, query)
+		require.NoError(t, err)
+		assert.Equal(t, 5, total)
+		require.Len(t, tasks, 2)
+		assert.Equal(t, "Task 3", tasks[0].Description)
+		assert.Equal(t, "Task 4", tasks[1].Description)
+	})
+
+	t.Run("offset beyond total", func(t *testing.T) {
+		query := &Query{Offset: 10}
+		tasks, total, err := ScanTasksWithQuery([]string{tmpDir}, query)
+		require.NoError(t, err)
+		assert.Equal(t, 5, total)
+		assert.Empty(t, tasks)
+	})
+
+	t.Run("no offset returns all with total", func(t *testing.T) {
+		tasks, total, err := ScanTasksWithQuery([]string{tmpDir}, nil)
+		require.NoError(t, err)
+		assert.Equal(t, 5, total)
+		assert.Len(t, tasks, 5)
+	})
+
+	t.Run("limit only", func(t *testing.T) {
+		query := &Query{Limit: 3}
+		tasks, total, err := ScanTasksWithQuery([]string{tmpDir}, query)
+		require.NoError(t, err)
+		assert.Equal(t, 5, total)
+		require.Len(t, tasks, 3)
+		assert.Equal(t, "Task 1", tasks[0].Description)
+	})
+
+	t.Run("offset equals total returns empty", func(t *testing.T) {
+		query := &Query{Offset: 5}
+		tasks, total, err := ScanTasksWithQuery([]string{tmpDir}, query)
+		require.NoError(t, err)
+		assert.Equal(t, 5, total)
+		assert.Empty(t, tasks)
+	})
+
+	t.Run("offset plus limit exceeds total returns remainder", func(t *testing.T) {
+		query := &Query{Offset: 3, Limit: 10}
+		tasks, total, err := ScanTasksWithQuery([]string{tmpDir}, query)
+		require.NoError(t, err)
+		assert.Equal(t, 5, total)
+		require.Len(t, tasks, 2)
+		assert.Equal(t, "Task 4", tasks[0].Description)
+		assert.Equal(t, "Task 5", tasks[1].Description)
+	})
+
+	t.Run("offset 0 limit 0 returns all", func(t *testing.T) {
+		query := &Query{Offset: 0, Limit: 0}
+		tasks, total, err := ScanTasksWithQuery([]string{tmpDir}, query)
+		require.NoError(t, err)
+		assert.Equal(t, 5, total)
+		assert.Len(t, tasks, 5)
+	})
 }

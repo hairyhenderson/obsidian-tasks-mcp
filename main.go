@@ -16,6 +16,7 @@ type QueryTasksInput struct {
 
 type QueryTasksOutput struct {
 	Tasks []*Task `json:"tasks"`
+	Total int     `json:"total"`
 }
 
 func queryTasks(_ context.Context, _ *mcp.CallToolRequest, input QueryTasksInput) (
@@ -57,7 +58,7 @@ func queryTasks(_ context.Context, _ *mcp.CallToolRequest, input QueryTasksInput
 	}
 
 	// Scan tasks
-	tasks, err := ScanTasksWithQuery(roots, query)
+	tasks, total, err := ScanTasksWithQuery(roots, query)
 	if err != nil {
 		return &mcp.CallToolResult{
 			IsError: true,
@@ -69,8 +70,7 @@ func queryTasks(_ context.Context, _ *mcp.CallToolRequest, input QueryTasksInput
 		}, QueryTasksOutput{Tasks: []*Task{}}, err
 	}
 
-	// Return results (tasks is always a slice, never nil, from ScanTasksWithQuery)
-	return nil, QueryTasksOutput{Tasks: tasks}, nil
+	return nil, QueryTasksOutput{Tasks: tasks, Total: total}, nil
 }
 
 func main() {
