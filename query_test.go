@@ -178,6 +178,58 @@ func TestParseQuery(t *testing.T) {
 				assert.Equal(t, 0, q.Offset)
 			},
 		},
+		{
+			name:    "sort by priority",
+			query:   "sort by priority",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.SortBy, 1)
+				assert.Equal(t, SortByPriority, q.SortBy[0].Field)
+				assert.False(t, q.SortBy[0].Reverse)
+			},
+		},
+		{
+			name:    "sort by priority reverse",
+			query:   "sort by priority reverse",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.SortBy, 1)
+				assert.Equal(t, SortByPriority, q.SortBy[0].Field)
+				assert.True(t, q.SortBy[0].Reverse)
+			},
+		},
+		{
+			name:    "sort by due",
+			query:   "sort by due",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.SortBy, 1)
+				assert.Equal(t, SortByDue, q.SortBy[0].Field)
+				assert.False(t, q.SortBy[0].Reverse)
+			},
+		},
+		{
+			name:    "sort by due reverse",
+			query:   "sort by due reverse",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.SortBy, 1)
+				assert.Equal(t, SortByDue, q.SortBy[0].Field)
+				assert.True(t, q.SortBy[0].Reverse)
+			},
+		},
+		{
+			name:    "multiple sort keys",
+			query:   "sort by priority reverse\nsort by due reverse",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.SortBy, 2)
+				assert.Equal(t, SortByPriority, q.SortBy[0].Field)
+				assert.True(t, q.SortBy[0].Reverse)
+				assert.Equal(t, SortByDue, q.SortBy[1].Field)
+				assert.True(t, q.SortBy[1].Reverse)
+			},
+		},
 	}
 
 	for _, tt := range tests {

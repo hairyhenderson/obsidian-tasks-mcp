@@ -13,9 +13,24 @@ type Filter interface {
 	Matches(task *Task) bool
 }
 
+// SortField represents a field to sort by
+type SortField int
+
+const (
+	SortByPriority SortField = iota
+	SortByDue
+)
+
+// SortKey represents a sort key with direction
+type SortKey struct {
+	Field   SortField
+	Reverse bool
+}
+
 // Query represents a parsed query with filters
 type Query struct {
 	Filters []Filter
+	SortBy  []SortKey
 	Limit   int // 0 means no limit
 	Offset  int // 0 means no offset
 }
@@ -174,11 +189,15 @@ var (
 	descIncludesRegex    = regexp.MustCompile(`^description includes (.+)$`)
 	descNotIncludesRegex = regexp.MustCompile(`^description does not include (.+)$`)
 
+	sortByRegex = regexp.MustCompile(`^sort by (priority|due)(?: (reverse))?$`)
+
 	limitRegex  = regexp.MustCompile(`^limit (\d+)$`)
 	offsetRegex = regexp.MustCompile(`^offset (\d+)$`)
 )
 
 // ParseQuery parses a query string into a Query struct
+//
+//nolint:gocyclo,funlen // complexity from parsing many filter/sort/pagination line types
 func ParseQuery(queryStr string) (*Query, error) {
 	query := &Query{Filters: []Filter{}}
 
@@ -191,6 +210,21 @@ func ParseQuery(queryStr string) (*Query, error) {
 
 		// Skip comments (lines starting with #)
 		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		if matches := sortByRegex.FindStringSubmatch(line); len(matches) >= 2 {
+			key := SortKey{Reverse: matches[2] == "reverse"}
+
+			switch matches[1] {
+			case "priority":
+				key.Field = SortByPriority
+			case "due":
+				key.Field = SortByDue
+			}
+
+			query.SortBy = append(query.SortBy, key)
+
 			continue
 		}
 

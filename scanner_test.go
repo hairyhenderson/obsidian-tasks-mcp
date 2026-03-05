@@ -161,3 +161,83 @@ func TestScanTasksWithQuery_OffsetAndLimit(t *testing.T) {
 		assert.Len(t, tasks, 5)
 	})
 }
+
+func TestScanTasksWithQuerySortByPriority(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	err := os.WriteFile(filepath.Join(tmpDir, "tasks.md"), []byte(`# Tasks
+
+- [ ] Low task 🔽
+- [ ] High task ⏫
+- [ ] No priority task
+- [ ] Highest task 🔺
+- [ ] Medium task 🔼
+`), 0o600)
+	require.NoError(t, err)
+
+	query := &Query{
+		SortBy: []SortKey{{Field: SortByPriority, Reverse: true}},
+	}
+	tasks, _, err := ScanTasksWithQuery([]string{tmpDir}, query)
+	require.NoError(t, err)
+	require.Len(t, tasks, 5)
+
+	assert.Equal(t, PriorityHighest, tasks[0].Priority)
+	assert.Equal(t, PriorityHigh, tasks[1].Priority)
+	assert.Equal(t, PriorityMedium, tasks[2].Priority)
+	assert.Equal(t, PriorityLow, tasks[3].Priority)
+	assert.Equal(t, PriorityNone, tasks[4].Priority)
+}
+
+func TestScanTasksWithQuerySortByDue(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	err := os.WriteFile(filepath.Join(tmpDir, "tasks.md"), []byte(`# Tasks
+
+- [ ] March task 📅 2026-03-01
+- [ ] January task 📅 2026-01-01
+- [ ] No due task
+- [ ] February task 📅 2026-02-01
+`), 0o600)
+	require.NoError(t, err)
+
+	query := &Query{
+		SortBy: []SortKey{{Field: SortByDue, Reverse: true}},
+	}
+	tasks, _, err := ScanTasksWithQuery([]string{tmpDir}, query)
+	require.NoError(t, err)
+	require.Len(t, tasks, 4)
+
+	assert.Equal(t, "2026-03-01", tasks[0].DueDate)
+	assert.Equal(t, "2026-02-01", tasks[1].DueDate)
+	assert.Equal(t, "2026-01-01", tasks[2].DueDate)
+	assert.Empty(t, tasks[3].DueDate)
+}
+
+func TestScanTasksWithQuerySortMultiKey(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	err := os.WriteFile(filepath.Join(tmpDir, "tasks.md"), []byte(`# Tasks
+
+- [ ] High early ⏫ 📅 2026-01-01
+- [ ] High late ⏫ 📅 2026-03-01
+- [ ] Highest task 🔺 📅 2026-02-01
+- [ ] High mid ⏫ 📅 2026-02-01
+`), 0o600)
+	require.NoError(t, err)
+
+	query := &Query{
+		SortBy: []SortKey{
+			{Field: SortByPriority, Reverse: true},
+			{Field: SortByDue, Reverse: true},
+		},
+	}
+	tasks, _, err := ScanTasksWithQuery([]string{tmpDir}, query)
+	require.NoError(t, err)
+	require.Len(t, tasks, 4)
+
+	assert.Equal(t, "Highest task", tasks[0].Description, "highest priority first")
+	assert.Equal(t, "High late", tasks[1].Description, "same priority, latest due first")
+	assert.Equal(t, "High mid", tasks[2].Description, "same priority, middle due")
+	assert.Equal(t, "High early", tasks[3].Description, "same priority, earliest due last")
+}
