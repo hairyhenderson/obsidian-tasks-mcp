@@ -72,6 +72,30 @@ func TestParseQuery(t *testing.T) {
 			},
 		},
 		{
+			name:    "tag include with hyphenated tag",
+			query:   "tag include #my-tag",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				f, ok := q.Filters[0].(*TagFilter)
+				require.True(t, ok)
+				assert.True(t, f.Include)
+				assert.Equal(t, "my-tag", f.Tag)
+			},
+		},
+		{
+			name:    "tag do not include with hyphenated tag",
+			query:   "tag do not include #my-tag",
+			wantErr: false,
+			check: func(t *testing.T, q *Query) {
+				require.Len(t, q.Filters, 1)
+				f, ok := q.Filters[0].(*TagFilter)
+				require.True(t, ok)
+				assert.False(t, f.Include)
+				assert.Equal(t, "my-tag", f.Tag)
+			},
+		},
+		{
 			name:    "tags do not include (plural)",
 			query:   "tags do not include #shopping",
 			wantErr: false,
