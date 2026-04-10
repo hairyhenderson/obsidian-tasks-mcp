@@ -2,6 +2,8 @@ module github.com/hairyhenderson/obsidian-tasks-mcp
 
 go 1.26.1
 
+toolchain go1.26.2
+
 require (
 	github.com/modelcontextprotocol/go-sdk v1.5.0
 	github.com/stretchr/testify v1.11.1
