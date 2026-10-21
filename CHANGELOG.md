@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/hairyhenderson/obsidian-tasks-mcp/compare/v0.1.0...v0.1.1) (2026-10-21)
+
+
+### Dependencies
+
+* update Go to 1.27.3 ([#75](https://github.com/hairyhenderson/obsidian-tasks-mcp/issues/75)) ([84c7eb5](https://github.com/hairyhenderson/obsidian-tasks-mcp/commit/84c7eb5778c0cea31d0967fb550eab04f4635e13))
+
 ## 0.1.0 (2026-10-17)
 
 
