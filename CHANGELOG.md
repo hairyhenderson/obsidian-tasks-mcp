@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/hairyhenderson/obsidian-tasks-mcp/compare/v0.1.1...v0.1.2) (2026-11-17)
+
+
+### Dependencies
+
+* build with Go 1.27.4 via a toolchain directive ([#78](https://github.com/hairyhenderson/obsidian-tasks-mcp/issues/78)) ([973478b](https://github.com/hairyhenderson/obsidian-tasks-mcp/commit/973478bd14152a16d6a832eea5baa66fdf98ef60))
+
 ## [0.1.1](https://github.com/hairyhenderson/obsidian-tasks-mcp/compare/v0.1.0...v0.1.1) (2026-10-21)
 
 
